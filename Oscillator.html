@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetroSaturate - RGB Kinetic Fusion</title>
+    <style>
+        :root {
+            --chassis-main: #2a2a2a;
+            --chassis-highlight: #3d3d3d;
+            --chassis-shadow: #151515;
+            --panel-well: #121212;
+            --hardware-text: #a0a0a0;
+            --screen-glow: #ffffff;
+            --active-btn-glow: #ffffff;
+            --grid-line: rgba(255, 255, 255, 0.12);
+            --sub-grid: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: #050505;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 30%, #333 0%, #050505 100%);
+        }
+
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .oscilloscope-unit {
+            position: relative;
+            background: var(--chassis-main);
+            background-image: 
+                repeating-linear-gradient(rgba(255,255,255, 0.01) 0px, rgba(255,255,255, 0.01) 1px, transparent 1px, transparent 2px),
+                linear-gradient(to bottom, var(--chassis-highlight), var(--chassis-shadow));
+            padding: 20px 40px 30px 40px;
+            border-radius: 12px;
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.8),
+                0 10px 20px rgba(0,0,0,0.5),
+                inset 0 1px 1px rgba(255,255,255,0.2);
+            border: 1px solid #111;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 1000px;
+            width: 95%;
+            transform: perspective(1200px) rotateX(2deg) scale(0.95);
+            border-top: 8px solid #1a1a1a;
+            border-bottom: 12px solid #111;
+        }
+
+        .screen-bezel {
+            padding: 12px;
+            background: #1a1a1a;
+            border-radius: 14px;
+            box-shadow: 
+                inset 0 10px 20px rgba(0,0,0,1),
+                0 2px 0 rgba(255,255,255,0.05);
+            border: 2px solid #111;
+        }
+
+        .screen-container {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            line-height: 0;
+            border: 4px solid #080808;
+            box-shadow: inset 0 0 120px rgba(0,0,0,1);
+        }
+
+        .screen-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(var(--grid-line) 2px, transparent 2px),
+                linear-gradient(90deg, var(--grid-line) 2px, transparent 2px),
+                linear-gradient(var(--sub-grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--sub-grid) 1px, transparent 1px);
+            background-size: 10% 12.5%, 10% 12.5%, 2% 2.5%, 2% 2.5%;
+            background-position: center center;
+            z-index: 2;
+        }
+
+        .screen-effects {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 5;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.45) 0px,
+                    rgba(0, 0, 0, 0.45) 1.5px,
+                    transparent 2.5px,
+                    transparent 4px
+                ),
+                radial-gradient(circle at center, transparent 20%, rgba(0,0,0,0.7) 120%);
+            opacity: 0.95;
+        }
+
+        canvas {
+            width: 100%;
+            height: 380px;
+            display: block;
+            filter: contrast(1.4) brightness(1.1) saturate(1.5);
+        }
+
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background: var(--panel-well);
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.03);
+            border: 1px solid #000;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 8px;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+        }
+
+        .label {
+            font-size: 7px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            color: #555;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .button-row {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .tactile-btn {
+            background: linear-gradient(to bottom, #444, #222);
+            border: 1px solid #111;
+            color: #777;
+            padding: 6px 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 9px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+            box-shadow: 0 2px 0 #000;
+            transition: all 0.05s;
+            flex: 1;
+            text-align: center;
+        }
+
+        .tactile-btn.active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 0 #000, inset 0 1px 3px rgba(0,0,0,0.5);
+            background: #1a1a1a;
+            color: var(--active-btn-glow);
+            text-shadow: 0 0 8px var(--active-btn-glow);
+        }
+
+        .tactile-btn.power {
+            background: linear-gradient(to bottom, #833, #411);
+            color: #ff9999;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .tactile-btn.power.active {
+            background: #a00;
+            color: #fff;
+            text-shadow: 0 0 10px #f00;
+        }
+
+        .slider-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 3px;
+            background: #000;
+            border-radius: 2px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: #777;
+            cursor: pointer;
+            margin-top: -4.5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        #status-text {
+            position: absolute;
+            bottom: 20px; left: 20px;
+            font-size: 9px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff; 
+            font-weight: 900;
+            z-index: 6;
+            opacity: 0.1;
+        }
+
+        .ai-status-bar {
+            grid-column: span 4;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 10px;
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #111;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #level-meter {
+            height: 3px;
+            width: 40px;
+            background: #222;
+            border-radius: 2px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+        #level-fill {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="workspace">
+        <div class="oscilloscope-unit">
+            <div class="screen-bezel">
+                <div class="screen-container">
+                    <div class="screen-overlay"></div>
+                    <div class="screen-effects"></div>
+                    <div id="status-text">RGB_FUSION_V2</div>
+                    <canvas id="scopeCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <div class="control-group">
+                    <div class="label">System</div>
+                    <button class="tactile-btn power" id="btn-power" onclick="togglePower()">⏻</button>
+                    <div class="button-row" style="margin-top:5px;">
+                        <button class="tactile-btn active" id="src-internal" onclick="setSource('internal')">OSC</button>
+                        <button class="tactile-btn" id="src-external" onclick="setSource('external')">EXT</button>
+                    </div>
+                    <label for="audio-file" id="file-label" style="display:none; font-size:7px; color:#666; cursor:pointer; text-align:center;">[ INJECT ]</label>
+                    <input type="file" id="audio-file" accept="audio/*" style="display:none">
+                    
+                    <div class="slider-wrap" style="margin-top: auto;">
+                        <div class="label" style="color:#622">Output Level</div>
+                        <input type="range" min="0" max="1" step="0.01" value="0.25" id="master-vol">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="label">Processing</div>
+                    <div class="slider-wrap">
+                        <div class="label" style="font-size:7px;">Signal Balance</div>
+                        <input type="range" min="0" max="1" step="0.01" value="0.5" id="mix-slider">
+                    </div>
+                    <div class="slider-wrap">
+                        <div class="label" style="font-size:7px;">Saturate (Drive)</div>
+                        <input type="range" min="1" max="100" step="1" value="25" id="sat-slider">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="label">Oscillators</div>
+                    <div class="slider-wrap">
+                        <div class="label" style="font-size:7px;"><span id="val-freqX">110</span>Hz (Primary)</div>
+                        <input type="range" min="20" max="880" value="110" id="freqX">
+                        <div class="button-row">
+                            <button class="tactile-btn active" id="typeX-sine" onclick="setOscType('sine')">SIN</button>
+                            <button class="tactile-btn" id="typeX-saw" onclick="setOscType('sawtooth')">SAW</button>
+                        </div>
+                    </div>
+                    <div class="slider-wrap" style="margin-top:auto;">
+                        <div class="label" style="font-size:7px;"><span id="val-freqY">110</span>Hz (Secondary)</div>
+                        <input type="range" min="20" max="880" value="110" id="freqY">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="label">Dimensions</div>
+                    <div class="slider-wrap">
+                        <div class="label" style="font-size:7px;">Z-Warp Depth</div>
+                        <input type="range" min="0" max="2" step="0.01" value="0.8" id="mod-depth">
+                    </div>
+                    <div class="slider-wrap">
+                        <div class="label" style="font-size:7px;">Trace Offset</div>
+                        <input type="range" min="0" max="800" step="1" value="0" id="trace-offset">
+                    </div>
+                    <div class="button-row" style="margin-top:auto;">
+                        <button class="tactile-btn active" id="mode-xy" onclick="setMode('xy')">3D XY</button>
+                        <button class="tactile-btn" id="mode-wave" onclick="setMode('wave')">WAVE</button>
+                    </div>
+                </div>
+
+                <div class="ai-status-bar">
+                    <span id="ai-output">// RGB MATRIX ACTIVE</span>
+                    <span>
+                        <div id="level-meter"><div id="level-fill"></div></div>
+                        <span id="pitch-tracker" style="color:#fff; margin-left:8px;">RGB ENABLED</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audio-element" loop crossorigin="anonymous"></audio>
+
+    <script>
+        const canvas = document.getElementById('scopeCanvas');
+        const ctx = canvas.getContext('2d');
+        const audio = document.getElementById('audio-element');
+        const fileInput = document.getElementById('audio-file');
+        const statusText = document.getElementById('status-text');
+        const volSlider = document.getElementById('master-vol');
+        const satSlider = document.getElementById('sat-slider');
+        const mixSlider = document.getElementById('mix-slider');
+        const modDepth = document.getElementById('mod-depth');
+        const traceOffset = document.getElementById('trace-offset');
+        const aiOutput = document.getElementById('ai-output');
+        const powerBtn = document.getElementById('btn-power');
+        const levelFill = document.getElementById('level-fill');
+
+        let audioCtx, analyserL, analyserR, sourceNode, trackVolNode, synthVolNode, visualGainNode, masterGain;
+        let waveShaper, lpfNode, modGain;
+        let bufferLength, dataArrayL, dataArrayR;
+        let currentMode = 'xy';
+        let signalSource = 'internal';
+        let isPowerOn = false;
+        
+        let oscX, oscY, gainX, gainY;
+
+        function resize() {
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = canvas.offsetHeight * 2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        volSlider.oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            if (masterGain) masterGain.gain.setTargetAtTime(val, audioCtx.currentTime, 0.05);
+            if (visualGainNode) visualGainNode.gain.setTargetAtTime(val * 4.0, audioCtx.currentTime, 0.05);
+        };
+
+        document.getElementById('freqX').oninput = (e) => document.getElementById('val-freqX').innerText = e.target.value;
+        document.getElementById('freqY').oninput = (e) => document.getElementById('val-freqY').innerText = e.target.value;
+
+        function togglePower() {
+            if (!isPowerOn) {
+                isPowerOn = true;
+                powerBtn.classList.add('active');
+                initAudioContext();
+            } else {
+                isPowerOn = false;
+                powerBtn.classList.remove('active');
+                if (audioCtx) audioCtx.suspend();
+                audio.pause();
+                statusText.innerText = "SIGNAL VOID";
+            }
+        }
+
+        async function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                setupRouting();
+            }
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            startHardwareOscillators();
+            statusText.innerText = "HARDWARE ENGAGED";
+            animate();
+        }
+
+        function makeDistortionCurve(amount) {
+            let k = amount, n_samples = 44100, curve = new Float32Array(n_samples);
+            for (let i = 0; i < n_samples; ++i ) {
+                let x = i * 2 / n_samples - 1;
+                curve[i] = (3 + k) * x * 20 * (Math.PI / 180) / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+
+        function setupRouting() {
+            analyserL = audioCtx.createAnalyser();
+            analyserR = audioCtx.createAnalyser();
+            analyserL.fftSize = 2048;
+            analyserR.fftSize = 2048;
+            bufferLength = analyserL.frequencyBinCount;
+            dataArrayL = new Uint8Array(bufferLength);
+            dataArrayR = new Uint8Array(bufferLength);
+
+            waveShaper = audioCtx.createWaveShaper();
+            waveShaper.curve = makeDistortionCurve(25);
+            
+            lpfNode = audioCtx.createBiquadFilter();
+            lpfNode.type = "lowpass";
+            lpfNode.frequency.value = 3500;
+
+            trackVolNode = audioCtx.createGain();
+            synthVolNode = audioCtx.createGain();
+            visualGainNode = audioCtx.createGain();
+            masterGain = audioCtx.createGain();
+            
+            trackVolNode.gain.value = 0.5;
+            synthVolNode.gain.value = 0.5;
+            visualGainNode.gain.value = parseFloat(volSlider.value) * 4.0;
+            masterGain.gain.value = volSlider.value;
+
+            const visualSplitter = audioCtx.createChannelSplitter(2);
+            visualGainNode.connect(visualSplitter);
+            visualSplitter.connect(analyserL, 0);
+            visualSplitter.connect(analyserR, 1);
+
+            masterGain.connect(audioCtx.destination);
+            waveShaper.connect(lpfNode).connect(trackVolNode);
+            trackVolNode.connect(masterGain);
+            synthVolNode.connect(masterGain);
+        }
+
+        function setSource(src) {
+            signalSource = src;
+            document.querySelectorAll('#src-internal, #src-external').forEach(b => b.classList.remove('active'));
+            document.getElementById(`src-${src}`).classList.add('active');
+            document.getElementById('file-label').style.display = src === 'external' ? 'block' : 'none';
+            if (!isPowerOn) return;
+            if (src === 'internal') {
+                audio.pause();
+                aiOutput.innerText = "// INTERNAL OSC ACTIVE";
+                synthVolNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.1);
+                trackVolNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+            } else {
+                aiOutput.innerText = "// EXT SIGNAL MONITORING";
+                synthVolNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1); 
+                trackVolNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.1);
+                if (audio.src) audio.play();
+            }
+        }
+
+        function startHardwareOscillators() {
+            if (!isPowerOn) return;
+            if (!oscX) {
+                oscX = audioCtx.createOscillator();
+                oscY = audioCtx.createOscillator();
+                gainX = audioCtx.createGain();
+                gainY = audioCtx.createGain();
+                const pX = audioCtx.createStereoPanner();
+                const pY = audioCtx.createStereoPanner();
+                pX.pan.value = -1; pY.pan.value = 1;
+                oscX.connect(gainX).connect(pX).connect(synthVolNode);
+                oscY.connect(gainY).connect(pY).connect(synthVolNode);
+                const visX = audioCtx.createStereoPanner();
+                const visY = audioCtx.createStereoPanner();
+                visX.pan.value = -1; visY.pan.value = 1;
+                oscX.connect(visX).connect(visualGainNode);
+                oscY.connect(visY).connect(visualGainNode);
+                modGain = audioCtx.createGain();
+                oscX.connect(modGain);
+                oscX.start();
+                oscY.start();
+            }
+        }
+
+        function updateProcessing() {
+            if (!isPowerOn || !oscX) return;
+            const fX = document.getElementById('freqX').value;
+            const fY = document.getElementById('freqY').value;
+            const sat = parseFloat(satSlider.value);
+            const mix = parseFloat(mixSlider.value);
+            const modAmt = parseFloat(modDepth.value);
+            
+            oscX.frequency.setTargetAtTime(fX, audioCtx.currentTime, 0.05);
+            oscY.frequency.setTargetAtTime(fY, audioCtx.currentTime, 0.05);
+            
+            if (signalSource === 'internal') {
+                gainX.gain.setTargetAtTime(0.5, audioCtx.currentTime, 0.05);
+                gainY.gain.setTargetAtTime(0.5, audioCtx.currentTime, 0.05);
+            } else {
+                gainX.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+                gainY.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+                waveShaper.curve = makeDistortionCurve(sat);
+                modGain.gain.setTargetAtTime(modAmt, audioCtx.currentTime, 0.05);
+                trackVolNode.gain.setTargetAtTime(mix, audioCtx.currentTime, 0.05);
+            }
+        }
+
+        fileInput.onchange = function() {
+            if (this.files[0]) {
+                const url = URL.createObjectURL(this.files[0]);
+                audio.src = url;
+                if (!audioCtx) togglePower();
+                if (!sourceNode && audioCtx) {
+                    sourceNode = audioCtx.createMediaElementSource(audio);
+                    sourceNode.connect(waveShaper);
+                    const modulatorNode = audioCtx.createGain();
+                    sourceNode.connect(modulatorNode);
+                    modGain.connect(modulatorNode.gain);
+                    modulatorNode.connect(lpfNode);
+                    const mp3Vis = audioCtx.createGain();
+                    mp3Vis.gain.value = 1.0;
+                    sourceNode.connect(mp3Vis).connect(visualGainNode);
+                }
+                statusText.innerText = `LOAD: ${this.files[0].name.toUpperCase()}`;
+                setSource('external');
+            }
+        };
+
+        function setOscType(type) {
+            document.querySelectorAll(`#typeX-sine, #typeX-saw`).forEach(b => b.classList.remove('active'));
+            document.getElementById(`typeX-${type === 'sine' ? 'sine' : 'saw'}`).classList.add('active');
+            if (oscX) { oscX.type = type; oscY.type = type; }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('#mode-wave, #mode-xy').forEach(b => b.classList.remove('active'));
+            document.getElementById(`mode-${mode}`).classList.add('active');
+        }
+
+        function animate() {
+            if (!isPowerOn) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+            updateProcessing();
+            requestAnimationFrame(animate);
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            analyserL.getByteTimeDomainData(dataArrayL);
+            analyserR.getByteTimeDomainData(dataArrayR);
+
+            let sum = 0;
+            for(let i=0; i<bufferLength; i++) {
+                let v = (dataArrayL[i]-128)/128;
+                sum += v*v;
+            }
+            let rms = Math.sqrt(sum/bufferLength);
+            levelFill.style.width = Math.min(100, rms * 450) + "%";
+
+            const mod = parseFloat(modDepth.value);
+            const scaleFactor = 0.9; 
+            const time = performance.now() * 0.002;
+            const offsetWidth = parseFloat(traceOffset.value);
+            
+            const drawTrace = (color, offsetTime, traceIndex) => {
+                ctx.strokeStyle = color;
+                ctx.beginPath();
+                
+                const screenCenterX = canvas.width / 2;
+                const screenCenterY = canvas.height / 2;
+
+                // Calculate Horizontal separation based on Trace Offset slider
+                // traceIndex is 0 (Red), 1 (Green), 2 (Blue)
+                // Offset shifts Red left, Blue right, Green stays center
+                let horizontalShift = (traceIndex - 1) * offsetWidth;
+                let centerX = screenCenterX + horizontalShift;
+                let centerY = screenCenterY;
+
+                const extHeightBoost = 1.8; 
+                const effectiveScale = signalSource === 'external' ? scaleFactor * extHeightBoost : scaleFactor;
+                const baseScale = Math.min(canvas.width, canvas.height) * 0.45 * effectiveScale;
+
+                const visualDamping = signalSource === 'external' ? 0.45 : 1.0;
+
+                const driftX = Math.sin(time + offsetTime) * 10;
+                const driftY = Math.cos(time + offsetTime) * 10;
+
+                if (currentMode === 'xy') {
+                    // Unified layout scale for both modes now
+                    const spreadScaleX = baseScale;
+                    const spreadScaleY = baseScale;
+
+                    for (let i = 0; i < bufferLength; i += 2) {
+                        let rawX = (dataArrayL[i] - 128) / 128.0;
+                        let rawY = (dataArrayR[i] - 128) / 128.0;
+                        
+                        rawX *= visualDamping;
+                        rawY *= visualDamping;
+
+                        let z = Math.sin((i / bufferLength) * Math.PI * 2 + offsetTime) * mod;
+
+                        const perspective = 1 / (1 - z * 0.4);
+                        const dx = centerX + driftX + rawX * spreadScaleX * perspective;
+                        const dy = centerY + driftY - rawY * spreadScaleY * perspective;
+
+                        ctx.lineWidth = (1.5 + (rms * 12)) * perspective;
+
+                        if (i === 0) ctx.moveTo(dx, dy);
+                        else ctx.lineTo(dx, dy);
+                    }
+                } else {
+                    const fullWidth = canvas.width;
+                    const sliceWidth = fullWidth / bufferLength;
+                    let x = 0;
+                    ctx.lineWidth = 4 + (rms * 12);
+                    
+                    for (let i = 0; i < bufferLength; i++) {
+                        let v = (dataArrayL[i] + dataArrayR[i]) / 256.0 - 0.5;
+                        v *= visualDamping;
+
+                        // Add vertical separation in WAVE mode if offset is used
+                        const verticalShift = (traceIndex - 1) * (offsetWidth / 4);
+                        const y = centerY + driftY + verticalShift + v * canvas.height * effectiveScale;
+                        
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                        x += sliceWidth;
+                    }
+                }
+                ctx.stroke();
+            };
+
+            ctx.globalCompositeOperation = 'screen';
+            drawTrace('rgba(255, 0, 0, 0.8)', 0, 0);
+            drawTrace('rgba(0, 255, 0, 0.8)', Math.PI * 2 / 3, 1);
+            drawTrace('rgba(0, 100, 255, 0.8)', Math.PI * 4 / 3, 2);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    </script>
+</body>
+</html>
