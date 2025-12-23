@@ -1,5 +1,7 @@
 # Oscillator
 
+<img width="1052" height="666" alt="image" src="https://github.com/user-attachments/assets/99743595-73c1-4451-8732-cee7bc305a3b" />
+
 Oscillator is a browser‑based audiovisual synthesizer inspired by vintage oscilloscopes, vector displays, and analog signal processors. It combines Web Audio oscillators or external audio input with real‑time XY and waveform visualization, rendered as layered RGB traces with depth, drift, and distortion.
 
 The entire application runs client‑side using standard web technologies (HTML, CSS, JavaScript, Web Audio API, and Canvas). No backend, build step, or external dependencies are required.
