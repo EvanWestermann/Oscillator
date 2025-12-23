@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RetroSaturate - RGB Kinetic Fusion</title>
     <style>
         :root {
@@ -27,8 +27,8 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            overflow: hidden;
             background: radial-gradient(circle at 50% 30%, #333 0%, #050505 100%);
+            overflow-x: hidden;
         }
 
         .workspace {
@@ -37,8 +37,8 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            height: 100vh;
-            padding: 20px;
+            min-height: 100vh;
+            padding: 10px;
             box-sizing: border-box;
         }
 
@@ -48,7 +48,7 @@
             background-image: 
                 repeating-linear-gradient(rgba(255,255,255, 0.01) 0px, rgba(255,255,255, 0.01) 1px, transparent 1px, transparent 2px),
                 linear-gradient(to bottom, var(--chassis-highlight), var(--chassis-shadow));
-            padding: 20px 40px 30px 40px;
+            padding: 20px;
             border-radius: 12px;
             box-shadow: 
                 0 30px 60px rgba(0,0,0,0.8),
@@ -59,14 +59,14 @@
             flex-direction: column;
             gap: 12px;
             max-width: 1000px;
-            width: 95%;
-            transform: perspective(1200px) rotateX(2deg) scale(0.95);
+            width: 100%;
+            transform: perspective(1200px) rotateX(2deg);
             border-top: 8px solid #1a1a1a;
             border-bottom: 12px solid #111;
         }
 
         .screen-bezel {
-            padding: 12px;
+            padding: 8px;
             background: #1a1a1a;
             border-radius: 14px;
             box-shadow: 
@@ -118,7 +118,7 @@
 
         canvas {
             width: 100%;
-            height: 380px;
+            height: 300px;
             display: block;
             filter: contrast(1.4) brightness(1.1) saturate(1.5);
         }
@@ -134,17 +134,45 @@
             border: 1px solid #000;
         }
 
+        /* Mobile Layout Adjustments */
+        @media (max-width: 768px) {
+            .workspace {
+                padding: 5px;
+                justify-content: flex-start;
+                overflow-y: auto;
+            }
+            .oscilloscope-unit {
+                transform: none;
+                padding: 15px;
+                margin-top: 10px;
+            }
+            .control-panel {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            canvas {
+                height: 220px;
+            }
+            .tactile-btn {
+                padding: 12px 6px; /* Larger touch target */
+                font-size: 11px;
+            }
+            .ai-status-bar {
+                grid-column: span 1;
+            }
+        }
+
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             padding: 8px;
             border: 1px solid #1a1a1a;
             border-radius: 4px;
         }
 
         .label {
-            font-size: 7px;
+            font-size: 8px;
             font-weight: 800;
             letter-spacing: 1.2px;
             color: #555;
@@ -185,7 +213,7 @@
         .tactile-btn.power {
             background: linear-gradient(to bottom, #833, #411);
             color: #ff9999;
-            font-size: 14px;
+            font-size: 18px;
             line-height: 1;
         }
 
@@ -198,31 +226,33 @@
         .slider-wrap {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 5px;
         }
 
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
+            touch-action: none; /* Prevents scrolling while sliding */
         }
 
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 3px;
+            height: 4px;
             background: #000;
             border-radius: 2px;
         }
 
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 12px;
-            width: 12px;
+            height: 18px;
+            width: 18px;
             border-radius: 50%;
-            background: #777;
+            background: #888;
             cursor: pointer;
-            margin-top: -4.5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            margin-top: -7px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            border: 1px solid #222;
         }
 
         #status-text {
@@ -242,7 +272,7 @@
             color: #fff;
             font-family: 'Courier New', Courier, monospace;
             font-size: 10px;
-            padding: 6px;
+            padding: 8px;
             border-radius: 4px;
             border: 1px solid #111;
             display: flex;
@@ -251,8 +281,8 @@
         }
 
         #level-meter {
-            height: 3px;
-            width: 40px;
+            height: 4px;
+            width: 60px;
             background: #222;
             border-radius: 2px;
             overflow: hidden;
@@ -281,58 +311,62 @@
             </div>
 
             <div class="control-panel">
+                <!-- Group 1: System -->
                 <div class="control-group">
                     <div class="label">System</div>
                     <button class="tactile-btn power" id="btn-power" onclick="togglePower()">⏻</button>
-                    <div class="button-row" style="margin-top:5px;">
+                    <div class="button-row">
                         <button class="tactile-btn active" id="src-internal" onclick="setSource('internal')">OSC</button>
                         <button class="tactile-btn" id="src-external" onclick="setSource('external')">EXT</button>
                     </div>
-                    <label for="audio-file" id="file-label" style="display:none; font-size:7px; color:#666; cursor:pointer; text-align:center;">[ INJECT ]</label>
+                    <label for="audio-file" id="file-label" style="display:none; font-size:9px; color:#aaa; cursor:pointer; text-align:center; padding: 5px; border: 1px dashed #444; border-radius: 4px;">[ INJECT MP3 ]</label>
                     <input type="file" id="audio-file" accept="audio/*" style="display:none">
                     
                     <div class="slider-wrap" style="margin-top: auto;">
-                        <div class="label" style="color:#622">Output Level</div>
+                        <div class="label" style="color:#622">Gain</div>
                         <input type="range" min="0" max="1" step="0.01" value="0.25" id="master-vol">
                     </div>
                 </div>
 
+                <!-- Group 2: Processing -->
                 <div class="control-group">
                     <div class="label">Processing</div>
                     <div class="slider-wrap">
-                        <div class="label" style="font-size:7px;">Signal Balance</div>
+                        <div class="label">Signal Balance</div>
                         <input type="range" min="0" max="1" step="0.01" value="0.5" id="mix-slider">
                     </div>
                     <div class="slider-wrap">
-                        <div class="label" style="font-size:7px;">Saturate (Drive)</div>
+                        <div class="label">Saturate</div>
                         <input type="range" min="1" max="100" step="1" value="25" id="sat-slider">
                     </div>
                 </div>
 
+                <!-- Group 3: Oscillators -->
                 <div class="control-group">
                     <div class="label">Oscillators</div>
                     <div class="slider-wrap">
-                        <div class="label" style="font-size:7px;"><span id="val-freqX">110</span>Hz (Primary)</div>
+                        <div class="label"><span id="val-freqX">110</span>Hz</div>
                         <input type="range" min="20" max="880" value="110" id="freqX">
                         <div class="button-row">
                             <button class="tactile-btn active" id="typeX-sine" onclick="setOscType('sine')">SIN</button>
                             <button class="tactile-btn" id="typeX-saw" onclick="setOscType('sawtooth')">SAW</button>
                         </div>
                     </div>
-                    <div class="slider-wrap" style="margin-top:auto;">
-                        <div class="label" style="font-size:7px;"><span id="val-freqY">110</span>Hz (Secondary)</div>
+                    <div class="slider-wrap">
+                        <div class="label"><span id="val-freqY">110</span>Hz</div>
                         <input type="range" min="20" max="880" value="110" id="freqY">
                     </div>
                 </div>
 
+                <!-- Group 4: Dimensions -->
                 <div class="control-group">
                     <div class="label">Dimensions</div>
                     <div class="slider-wrap">
-                        <div class="label" style="font-size:7px;">Z-Warp Depth</div>
+                        <div class="label">Z-Warp</div>
                         <input type="range" min="0" max="2" step="0.01" value="0.8" id="mod-depth">
                     </div>
                     <div class="slider-wrap">
-                        <div class="label" style="font-size:7px;">Trace Offset</div>
+                        <div class="label">RGB Trace Offset</div>
                         <input type="range" min="0" max="800" step="1" value="0" id="trace-offset">
                     </div>
                     <div class="button-row" style="margin-top:auto;">
@@ -345,7 +379,7 @@
                     <span id="ai-output">// RGB MATRIX ACTIVE</span>
                     <span>
                         <div id="level-meter"><div id="level-fill"></div></div>
-                        <span id="pitch-tracker" style="color:#fff; margin-left:8px;">RGB ENABLED</span>
+                        <span id="pitch-tracker" style="color:#fff; margin-left:8px;">READY</span>
                     </span>
                 </div>
             </div>
@@ -379,8 +413,9 @@
         let oscX, oscY, gainX, gainY;
 
         function resize() {
-            canvas.width = canvas.offsetWidth * 2;
-            canvas.height = canvas.offsetHeight * 2;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.offsetWidth * dpr;
+            canvas.height = canvas.offsetHeight * dpr;
         }
         window.addEventListener('resize', resize);
         resize();
@@ -599,9 +634,6 @@
                 const screenCenterX = canvas.width / 2;
                 const screenCenterY = canvas.height / 2;
 
-                // Calculate Horizontal separation based on Trace Offset slider
-                // traceIndex is 0 (Red), 1 (Green), 2 (Blue)
-                // Offset shifts Red left, Blue right, Green stays center
                 let horizontalShift = (traceIndex - 1) * offsetWidth;
                 let centerX = screenCenterX + horizontalShift;
                 let centerY = screenCenterY;
@@ -616,7 +648,6 @@
                 const driftY = Math.cos(time + offsetTime) * 10;
 
                 if (currentMode === 'xy') {
-                    // Unified layout scale for both modes now
                     const spreadScaleX = baseScale;
                     const spreadScaleY = baseScale;
 
@@ -633,7 +664,7 @@
                         const dx = centerX + driftX + rawX * spreadScaleX * perspective;
                         const dy = centerY + driftY - rawY * spreadScaleY * perspective;
 
-                        ctx.lineWidth = (1.5 + (rms * 12)) * perspective;
+                        ctx.lineWidth = (2.0 + (rms * 15)) * perspective;
 
                         if (i === 0) ctx.moveTo(dx, dy);
                         else ctx.lineTo(dx, dy);
@@ -642,15 +673,14 @@
                     const fullWidth = canvas.width;
                     const sliceWidth = fullWidth / bufferLength;
                     let x = 0;
-                    ctx.lineWidth = 4 + (rms * 12);
+                    ctx.lineWidth = 4 + (rms * 15);
                     
                     for (let i = 0; i < bufferLength; i++) {
                         let v = (dataArrayL[i] + dataArrayR[i]) / 256.0 - 0.5;
                         v *= visualDamping;
 
-                        // Add vertical separation in WAVE mode if offset is used
                         const verticalShift = (traceIndex - 1) * (offsetWidth / 4);
-                        const y = centerY + driftY + verticalShift + v * canvas.height * effectiveScale;
+                        const y = centerY + driftY + verticalShift + v * canvas.height * (effectiveScale * 0.5);
                         
                         if (i === 0) ctx.moveTo(x, y);
                         else ctx.lineTo(x, y);
