@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RetroSaturate - RGB Kinetic Fusion</title>
+    <title>Oscillator</title>
     <style>
         :root {
             --chassis-main: #2a2a2a;
             --chassis-highlight: #3d3d3d;
             --chassis-shadow: #151515;
             --panel-well: #121212;
-            --hardware-text: #a0a0a0;
+            --hardware-text: #666; /* Matching the other control labels */
             --screen-glow: #ffffff;
             --active-btn-glow: #ffffff;
             --grid-line: rgba(255, 255, 255, 0.12);
             --sub-grid: rgba(255, 255, 255, 0.05);
+            --led-bg: #0a0a0a;
+            --led-text: #00ff41; /* Classic green digital readout */
         }
 
         body {
@@ -60,6 +62,7 @@
             gap: 12px;
             max-width: 1000px;
             width: 100%;
+            box-sizing: border-box;
             transform: perspective(1200px) rotateX(2deg);
             border-top: 8px solid #1a1a1a;
             border-bottom: 12px solid #111;
@@ -134,34 +137,6 @@
             border: 1px solid #000;
         }
 
-        /* Mobile Layout Adjustments */
-        @media (max-width: 768px) {
-            .workspace {
-                padding: 5px;
-                justify-content: flex-start;
-                overflow-y: auto;
-            }
-            .oscilloscope-unit {
-                transform: none;
-                padding: 15px;
-                margin-top: 10px;
-            }
-            .control-panel {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            canvas {
-                height: 220px;
-            }
-            .tactile-btn {
-                padding: 12px 6px; /* Larger touch target */
-                font-size: 11px;
-            }
-            .ai-status-bar {
-                grid-column: span 1;
-            }
-        }
-
         .control-group {
             display: flex;
             flex-direction: column;
@@ -171,11 +146,42 @@
             border-radius: 4px;
         }
 
+        @media (max-width: 768px) {
+            .workspace {
+                padding: 10px;
+                justify-content: flex-start;
+                overflow-y: auto;
+                height: auto;
+            }
+            .oscilloscope-unit {
+                transform: none; 
+                width: 100%;
+                margin: 0;
+            }
+            .control-panel {
+                grid-template-columns: 1fr !important;
+                gap: 15px;
+            }
+            .ai-status-bar {
+                grid-column: span 1 !important;
+            }
+            canvas {
+                height: 220px;
+            }
+            .tactile-btn {
+                padding: 14px 6px; 
+                font-size: 11px;
+            }
+            .label {
+                font-size: 10px;
+            }
+        }
+
         .label {
             font-size: 8px;
             font-weight: 800;
             letter-spacing: 1.2px;
-            color: #555;
+            color: var(--hardware-text);
             text-transform: uppercase;
             text-align: center;
         }
@@ -229,11 +235,46 @@
             gap: 5px;
         }
 
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        /* Digital Readout Styling */
+        .digital-display {
+            background: var(--led-bg);
+            border: 1px solid #333;
+            border-radius: 3px;
+            padding: 2px 6px;
+            min-width: 45px;
+            text-align: right;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.9);
+            position: relative;
+        }
+
+        .digital-value {
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--led-text);
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.4);
+        }
+
+        .unit-label {
+            font-size: 7px;
+            color: #444;
+            font-weight: bold;
+            margin-left: 2px;
+            pointer-events: none;
+        }
+
         input[type=range] {
             -webkit-appearance: none;
-            width: 100%;
+            flex: 1;
             background: transparent;
-            touch-action: none; /* Prevents scrolling while sliding */
+            touch-action: none; 
         }
 
         input[type=range]::-webkit-slider-runnable-track {
@@ -245,12 +286,12 @@
 
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 18px;
-            width: 18px;
+            height: 20px;
+            width: 20px;
             border-radius: 50%;
             background: #888;
             cursor: pointer;
-            margin-top: -7px;
+            margin-top: -8px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.5);
             border: 1px solid #222;
         }
@@ -319,11 +360,10 @@
                         <button class="tactile-btn active" id="src-internal" onclick="setSource('internal')">OSC</button>
                         <button class="tactile-btn" id="src-external" onclick="setSource('external')">EXT</button>
                     </div>
-                    <label for="audio-file" id="file-label" style="display:none; font-size:9px; color:#aaa; cursor:pointer; text-align:center; padding: 5px; border: 1px dashed #444; border-radius: 4px;">[ INJECT MP3 ]</label>
                     <input type="file" id="audio-file" accept="audio/*" style="display:none">
                     
                     <div class="slider-wrap" style="margin-top: auto;">
-                        <div class="label" style="color:#622">Gain</div>
+                        <div class="label">Gain</div>
                         <input type="range" min="0" max="1" step="0.01" value="0.25" id="master-vol">
                     </div>
                 </div>
@@ -345,16 +385,26 @@
                 <div class="control-group">
                     <div class="label">Oscillators</div>
                     <div class="slider-wrap">
-                        <div class="label"><span id="val-freqX">110</span>Hz</div>
-                        <input type="range" min="20" max="880" value="110" id="freqX">
-                        <div class="button-row">
-                            <button class="tactile-btn active" id="typeX-sine" onclick="setOscType('sine')">SIN</button>
-                            <button class="tactile-btn" id="typeX-saw" onclick="setOscType('sawtooth')">SAW</button>
+                        <div class="label">X-Axis</div>
+                        <div class="slider-row">
+                            <input type="range" min="10" max="880" value="10" id="freqX">
+                            <div class="digital-display">
+                                <span class="digital-value" id="val-freqX">10</span><span class="unit-label">Hz</span>
+                            </div>
                         </div>
                     </div>
                     <div class="slider-wrap">
-                        <div class="label"><span id="val-freqY">110</span>Hz</div>
-                        <input type="range" min="20" max="880" value="110" id="freqY">
+                        <div class="label">Y-Axis</div>
+                        <div class="slider-row">
+                            <input type="range" min="10" max="880" value="10" id="freqY">
+                            <div class="digital-display">
+                                <span class="digital-value" id="val-freqY">10</span><span class="unit-label">Hz</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="button-row" style="margin-top: auto;">
+                        <button class="tactile-btn active" id="typeX-sine" onclick="setOscType('sine')">SIN</button>
+                        <button class="tactile-btn" id="typeX-saw" onclick="setOscType('sawtooth')">SAW</button>
                     </div>
                 </div>
 
@@ -363,7 +413,7 @@
                     <div class="label">Dimensions</div>
                     <div class="slider-wrap">
                         <div class="label">Z-Warp</div>
-                        <input type="range" min="0" max="2" step="0.01" value="0.8" id="mod-depth">
+                        <input type="range" min="0" max="2" step="0.01" value="0" id="mod-depth">
                     </div>
                     <div class="slider-wrap">
                         <div class="label">RGB Trace Offset</div>
@@ -504,7 +554,11 @@
             signalSource = src;
             document.querySelectorAll('#src-internal, #src-external').forEach(b => b.classList.remove('active'));
             document.getElementById(`src-${src}`).classList.add('active');
-            document.getElementById('file-label').style.display = src === 'external' ? 'block' : 'none';
+            
+            if (src === 'external') {
+                fileInput.click();
+            }
+
             if (!isPowerOn) return;
             if (src === 'internal') {
                 audio.pause();
@@ -515,7 +569,6 @@
                 aiOutput.innerText = "// EXT SIGNAL MONITORING";
                 synthVolNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1); 
                 trackVolNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.1);
-                if (audio.src) audio.play();
             }
         }
 
@@ -526,18 +579,28 @@
                 oscY = audioCtx.createOscillator();
                 gainX = audioCtx.createGain();
                 gainY = audioCtx.createGain();
+                
                 const pX = audioCtx.createStereoPanner();
                 const pY = audioCtx.createStereoPanner();
                 pX.pan.value = -1; pY.pan.value = 1;
+
                 oscX.connect(gainX).connect(pX).connect(synthVolNode);
                 oscY.connect(gainY).connect(pY).connect(synthVolNode);
+
                 const visX = audioCtx.createStereoPanner();
                 const visY = audioCtx.createStereoPanner();
                 visX.pan.value = -1; visY.pan.value = 1;
+
                 oscX.connect(visX).connect(visualGainNode);
                 oscY.connect(visY).connect(visualGainNode);
+
                 modGain = audioCtx.createGain();
                 oscX.connect(modGain);
+
+                // Initialize at 10Hz
+                oscX.frequency.value = 10;
+                oscY.frequency.value = 10;
+
                 oscX.start();
                 oscY.start();
             }
@@ -545,8 +608,8 @@
 
         function updateProcessing() {
             if (!isPowerOn || !oscX) return;
-            const fX = document.getElementById('freqX').value;
-            const fY = document.getElementById('freqY').value;
+            const fX = parseFloat(document.getElementById('freqX').value);
+            const fY = parseFloat(document.getElementById('freqY').value);
             const sat = parseFloat(satSlider.value);
             const mix = parseFloat(mixSlider.value);
             const modAmt = parseFloat(modDepth.value);
@@ -570,7 +633,7 @@
             if (this.files[0]) {
                 const url = URL.createObjectURL(this.files[0]);
                 audio.src = url;
-                if (!audioCtx) togglePower();
+                if (!isPowerOn) togglePower();
                 if (!sourceNode && audioCtx) {
                     sourceNode = audioCtx.createMediaElementSource(audio);
                     sourceNode.connect(waveShaper);
@@ -583,7 +646,7 @@
                     sourceNode.connect(mp3Vis).connect(visualGainNode);
                 }
                 statusText.innerText = `LOAD: ${this.files[0].name.toUpperCase()}`;
-                setSource('external');
+                audio.play();
             }
         };
 
@@ -641,16 +704,12 @@
                 const extHeightBoost = 1.8; 
                 const effectiveScale = signalSource === 'external' ? scaleFactor * extHeightBoost : scaleFactor;
                 const baseScale = Math.min(canvas.width, canvas.height) * 0.45 * effectiveScale;
-
                 const visualDamping = signalSource === 'external' ? 0.45 : 1.0;
 
                 const driftX = Math.sin(time + offsetTime) * 10;
                 const driftY = Math.cos(time + offsetTime) * 10;
 
                 if (currentMode === 'xy') {
-                    const spreadScaleX = baseScale;
-                    const spreadScaleY = baseScale;
-
                     for (let i = 0; i < bufferLength; i += 2) {
                         let rawX = (dataArrayL[i] - 128) / 128.0;
                         let rawY = (dataArrayR[i] - 128) / 128.0;
@@ -661,8 +720,8 @@
                         let z = Math.sin((i / bufferLength) * Math.PI * 2 + offsetTime) * mod;
 
                         const perspective = 1 / (1 - z * 0.4);
-                        const dx = centerX + driftX + rawX * spreadScaleX * perspective;
-                        const dy = centerY + driftY - rawY * spreadScaleY * perspective;
+                        const dx = centerX + driftX + rawX * baseScale * perspective;
+                        const dy = centerY + driftY - rawY * baseScale * perspective;
 
                         ctx.lineWidth = (2.0 + (rms * 15)) * perspective;
 
