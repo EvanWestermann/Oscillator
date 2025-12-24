@@ -34,19 +34,8 @@ All processing and rendering are real‑time and interactive.
 * Low‑pass filtering
 * Master output gain control
 
-### Visualization Engine
-
-* Canvas‑based real‑time rendering
-* Stereo signal analysis via AnalyserNode
-* RMS‑based level meter
-* RGB trace layering with additive blending
-* Perspective‑based Z‑warp depth
-* Drift and motion modulation
-* Adjustable trace separation (horizontal or vertical depending on mode)
-
 ### UI / Interaction
 
-* Power‑gated AudioContext initialization
 * Hardware‑inspired tactile controls
 * Visual feedback for active states
 * CRT grid overlays and scanline effects
@@ -67,15 +56,10 @@ All processing and rendering are real‑time and interactive.
   * `OSC`: Internal oscillators
   * `EXT`: External audio file input
 
-* **[INJECT]**
-
-  * Appears when EXT is selected.
-  * Allows loading a local audio file (MP3, WAV, etc.).
-
 * **Output Level**
 
   * Controls master audio output volume.
-  * Also scales visual intensity.
+  * Scales visual intensity.
 
 ---
 
@@ -93,11 +77,11 @@ All processing and rendering are real‑time and interactive.
 
 ### Oscillators Section
 
-* **Primary Frequency (X)**
+* **X-Axis**
 
   * Sets the frequency of the left‑panned oscillator.
 
-* **Secondary Frequency (Y)**
+* **Y-Axis**
 
   * Sets the frequency of the right‑panned oscillator.
 
